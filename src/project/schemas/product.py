@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 
-from project.infrastructure.postgres.models import StatusEnum_
+from project.infrastructure.postgres.models import StatusEnum_1
 
 
 class ProductSchema(BaseModel):
@@ -8,4 +8,4 @@ class ProductSchema(BaseModel):
 
     id: int
     supply_id: int
-    status: StatusEnum_
+    status: StatusEnum_1

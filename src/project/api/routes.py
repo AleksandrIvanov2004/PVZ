@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from project.infrastructure.postgres.database import PostgresDatabase
 from project.infrastructure.postgres.repository.user_repo import UserRepository
 from project.schemas.user import UserSchema
@@ -16,10 +16,12 @@ from project.infrastructure.postgres.repository.supply_repo import SupplyReposit
 from project.schemas.supply import SupplySchema
 from project.infrastructure.postgres.repository.product_repo import ProductRepository
 from project.schemas.product import ProductSchema
+from project.schemas.login import  LoginSchema
+from project.infrastructure.security.auth import get_current_user, allow_only_admin
 
 router = APIRouter()
 @router.get("/all_users", response_model=list[UserSchema])
-async def get_all_users() -> list[UserSchema]:
+async def get_all_users(current_user: dict = Depends(allow_only_admin)) -> list[UserSchema]:
     user_repo = UserRepository()
     database = PostgresDatabase()
     async with database.session() as session:
@@ -28,7 +30,7 @@ async def get_all_users() -> list[UserSchema]:
     return all_users
 
 @router.get("/users/{id}", response_model=UserSchema)
-async def get_user_by_id(id: int) -> UserSchema:
+async def get_user_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> UserSchema:
     user_repo = UserRepository()
     database = PostgresDatabase()
 
@@ -43,15 +45,16 @@ async def get_user_by_id(id: int) -> UserSchema:
 
 
 @router.post("/users", response_model=UserSchema)
-async def insert_user(user: UserSchema) -> UserSchema:
+async def insert_user(user: UserSchema, current_user: dict = Depends(allow_only_admin)) -> UserSchema:
     user_repo = UserRepository()
     database = PostgresDatabase()
 
     async with database.session() as session:
         await user_repo.check_connection(session=session)
-        new_user = await user_repo.insert_user(session=session, login=user.login, password=user.password,
+        new_user = await user_repo.insert_user(session=session, login=user.login, passw=user.password,
                                                surname=user.surname, name=user.name, last_name=user.last_name,
-                                               age=user.age, phone_number=user.phone_number, region=user.region)
+                                               age=user.age, phone_number=user.phone_number, region=user.region,
+                                               role=user.role)
 
     if not new_user:
         raise HTTPException(status_code=500, detail="Failed to insert user")
@@ -60,7 +63,7 @@ async def insert_user(user: UserSchema) -> UserSchema:
 
 
 @router.delete("/users/{id}", response_model=dict)
-async def delete_user_by_id(id: int) -> dict:
+async def delete_user_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     user_repo = UserRepository()
     database = PostgresDatabase()
 
@@ -75,7 +78,7 @@ async def delete_user_by_id(id: int) -> dict:
 
 
 @router.put("/users/{id}", response_model=UserSchema)
-async def update_user_by_id(id: int, user: UserSchema) -> UserSchema:
+async def update_user_by_id(id: int, user: UserSchema, current_user: dict = Depends(allow_only_admin)) -> UserSchema:
     user_repo = UserRepository()
     database = PostgresDatabase()
 
@@ -83,11 +86,24 @@ async def update_user_by_id(id: int, user: UserSchema) -> UserSchema:
         await user_repo.check_connection(session=session)
         updated_user = await user_repo.update_user_by_id(session=session, id_user=id, login=user.login, password=user.password,
                                                          surname=user.surname, name=user.name, last_name=user.last_name,
-                                                         age=user.age, phone_number=user.phone_number, region=user.region)
+                                                         age=user.age, phone_number=user.phone_number, region=user.region,
+                                                         role=user.role)
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found or failed to update")
 
     return updated_user
+
+
+@router.post("/login")
+async def login(user: LoginSchema) -> dict:
+    users_repo = UserRepository()
+    database = PostgresDatabase()
+
+    async with database.session() as session:
+        await users_repo.check_connection(session=session)
+        auth_response = await users_repo.login_user(session=session, login=user.login, passw=user.password)
+
+    return auth_response
 
 
 @router.get("/all_cars", response_model=list[CarSchema])
@@ -115,7 +131,7 @@ async def get_car_by_id(id: int) -> CarSchema:
 
 
 @router.post("/cars", response_model=CarSchema)
-async def insert_car(car: CarSchema) -> CarSchema:
+async def insert_car(car: CarSchema, current_user: dict = Depends(allow_only_admin)) -> CarSchema:
     car_repo = CarRepository()
     database = PostgresDatabase()
 
@@ -130,7 +146,7 @@ async def insert_car(car: CarSchema) -> CarSchema:
 
 
 @router.delete("/cars/{id}", response_model=dict)
-async def delete_car_by_id(id: int) -> dict:
+async def delete_car_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     car_repo = CarRepository()
     database = PostgresDatabase()
 
@@ -183,7 +199,7 @@ async def get_driver_by_id(id: int) -> DriverSchema:
 
 
 @router.post("/drivers", response_model=DriverSchema)
-async def insert_driver(driver: DriverSchema) -> DriverSchema:
+async def insert_driver(driver: DriverSchema, current_user: dict = Depends(allow_only_admin)) -> DriverSchema:
     driver_repo = DriverRepository()
     database = PostgresDatabase()
 
@@ -199,7 +215,7 @@ async def insert_driver(driver: DriverSchema) -> DriverSchema:
 
 
 @router.delete("/drivers/{id}", response_model=dict)
-async def delete_driver_by_id(id: int) -> dict:
+async def delete_driver_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     driver_repo = DriverRepository()
     database = PostgresDatabase()
 
@@ -255,7 +271,7 @@ async def get_pick_up_point_by_id(id: int) -> PickUpPointSchema:
 
 
 @router.post("/pick_up_points", response_model=PickUpPointSchema)
-async def insert_pick_up_point(pick_up_point: PickUpPointSchema) -> PickUpPointSchema:
+async def insert_pick_up_point(pick_up_point: PickUpPointSchema, current_user: dict = Depends(allow_only_admin)) -> PickUpPointSchema:
     pick_up_point_repo = PickUpPointRepository()
     database = PostgresDatabase()
 
@@ -271,7 +287,7 @@ async def insert_pick_up_point(pick_up_point: PickUpPointSchema) -> PickUpPointS
 
 
 @router.delete("/pick_up_points/{id}", response_model=dict)
-async def delete_pick_up_point_by_id(id: int) -> dict:
+async def delete_pick_up_point_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     pick_up_point_repo = PickUpPointRepository()
     database = PostgresDatabase()
 
@@ -327,7 +343,7 @@ async def get_worker_by_id(id: int) -> WorkerSchema:
 
 
 @router.post("/workers", response_model=WorkerSchema)
-async def insert_worker(worker: WorkerSchema) -> WorkerSchema:
+async def insert_worker(worker: WorkerSchema, current_user: dict = Depends(allow_only_admin)) -> WorkerSchema:
     worker_repo = WorkerRepository()
     database = PostgresDatabase()
 
@@ -343,7 +359,7 @@ async def insert_worker(worker: WorkerSchema) -> WorkerSchema:
 
 
 @router.delete("/workers/{id}", response_model=dict)
-async def delete_worker_by_id(id: int) -> dict:
+async def delete_worker_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     worker_repo = WorkerRepository()
     database = PostgresDatabase()
 
@@ -398,7 +414,7 @@ async def get_working_shift_by_id(id: int) -> WorkingShiftSchema:
 
 
 @router.post("/working_shifts", response_model=WorkingShiftSchema)
-async def insert_working_shift(working_shift: WorkingShiftSchema) -> WorkingShiftSchema:
+async def insert_working_shift(working_shift: WorkingShiftSchema, current_user: dict = Depends(allow_only_admin)) -> WorkingShiftSchema:
     working_shift_repo = WorkingShiftRepository()
     database = PostgresDatabase()
 
@@ -414,7 +430,7 @@ async def insert_working_shift(working_shift: WorkingShiftSchema) -> WorkingShif
     return new_working_shift
 
 @router.delete("/working_shifts/{id}", response_model=dict)
-async def delete_working_shift_by_id(id: int) -> dict:
+async def delete_working_shift_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     working_shift_repo = WorkingShiftRepository()
     database = PostgresDatabase()
 
@@ -472,7 +488,7 @@ async def get_supply_by_id(id: int) -> SupplySchema:
 
 
 @router.post("/supplies", response_model=SupplySchema)
-async def insert_supply(supply: SupplySchema) -> SupplySchema:
+async def insert_supply(supply: SupplySchema, current_user: dict = Depends(allow_only_admin)) -> SupplySchema:
     supply_repo = SupplyRepository()
     database = PostgresDatabase()
 
@@ -489,7 +505,7 @@ async def insert_supply(supply: SupplySchema) -> SupplySchema:
 
 
 @router.delete("/supplies/{id}", response_model=dict)
-async def delete_supply_by_id(id: int) -> dict:
+async def delete_supply_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     supply_repo = SupplyRepository()
     database = PostgresDatabase()
 
@@ -545,7 +561,7 @@ async def get_product_by_id(id: int) -> ProductSchema:
 
 
 @router.post("/products", response_model=ProductSchema)
-async def insert_product(product: ProductSchema) -> ProductSchema:
+async def insert_product(product: ProductSchema, current_user: dict = Depends(allow_only_admin)) -> ProductSchema:
     product_repo = ProductRepository()
     database = PostgresDatabase()
 
@@ -561,7 +577,7 @@ async def insert_product(product: ProductSchema) -> ProductSchema:
 
 
 @router.delete("/products/{id}", response_model=dict)
-async def delete_product_by_id(id: int) -> dict:
+async def delete_product_by_id(id: int, current_user: dict = Depends(allow_only_admin)) -> dict:
     product_repo = ProductRepository()
     database = PostgresDatabase()
 

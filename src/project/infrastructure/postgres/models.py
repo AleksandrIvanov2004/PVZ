@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from project.infrastructure.postgres.database import Base
 from sqlalchemy import ForeignKey
 
-class StatusEnum_(str, enum.Enum):
+class StatusEnum_1(str, enum.Enum):
     NOT_SENT = "NOT_SENT",
     DELIVERED_IN_PVZ = "DELIVERED_IN_PVZ"
     RECEIVED = "RECEIVED"
@@ -25,6 +25,7 @@ class User(Base):
     age: Mapped[int] = mapped_column(nullable=False)
     phone_number: Mapped[str] = mapped_column(nullable=False)
     region: Mapped[int] = mapped_column(nullable=False)
+    role: Mapped[str] = mapped_column(nullable=False)
 
 
 class Car(Base):
@@ -90,5 +91,5 @@ class Product(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     supply_id: Mapped[int] = mapped_column(ForeignKey("supplies.id", ondelete=CASCADE,
                                                        onupdate=CASCADE), nullable=False)
-    status: Mapped[StatusEnum_] = mapped_column(nullable=False)
+    status: Mapped[StatusEnum_1] = mapped_column(nullable=False)
 

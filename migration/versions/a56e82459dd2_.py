@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 598001bf92a4
+Revision ID: a56e82459dd2
 Revises: 
-Create Date: 2025-03-16 17:14:36.136882
+Create Date: 2025-03-20 09:40:31.618489
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '598001bf92a4'
+revision: str = 'a56e82459dd2'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -46,6 +46,7 @@ def upgrade() -> None:
     sa.Column('age', sa.Integer(), nullable=False),
     sa.Column('phone_number', sa.String().with_variant(sa.String(length=255), 'postgresql'), nullable=False),
     sa.Column('region', sa.Integer(), nullable=False),
+    sa.Column('role', sa.String().with_variant(sa.String(length=255), 'postgresql'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('login'),
     schema='public'
@@ -90,7 +91,7 @@ def upgrade() -> None:
     op.create_table('products',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('supply_id', sa.Integer(), nullable=False),
-    sa.Column('status', sa.Enum('NOT_SENT', 'DELIVERED_IN_PVZ', 'RECEIVED', name='statusenum_'), nullable=False),
+    sa.Column('status', sa.Enum('NOT_SENT', 'DELIVERED_IN_PVZ', 'RECEIVED', name='statusenum_1'), nullable=False),
     sa.ForeignKeyConstraint(['supply_id'], ['public.supplies.id'], onupdate='cascade', ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     schema='public'

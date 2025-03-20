@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     POSTGRES_USER: SecretStr = "postgres"
     POSTGRES_PASSWORD: SecretStr = "postgres"
     POSTGRES_RECONNECT_INTERVAL_SEC: int = 1
+
+    JWT_SECRET_KEY: SecretStr
+    HASH_ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     @property
     def postgres_url(self) -> str:
         creds = f"{self.POSTGRES_USER.get_secret_value()}:{self.POSTGRES_PASSWORD.get_secret_value()}"

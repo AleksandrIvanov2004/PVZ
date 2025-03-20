@@ -5,7 +5,7 @@ from project.schemas.product import ProductSchema
 from project.infrastructure.postgres.models import Product
 from project.core.config import settings
 
-from project.infrastructure.postgres.models import StatusEnum_
+from project.infrastructure.postgres.models import StatusEnum_1
 
 
 class ProductRepository:
@@ -46,7 +46,7 @@ class ProductRepository:
             self,
             session: AsyncSession,
             supply_id: int,
-            status: StatusEnum_
+            status: StatusEnum_1
     ) -> ProductSchema | None:
         query = text(f"""
                 INSERT INTO {settings.POSTGRES_SCHEMA}.products (supply_id, status) 
@@ -79,7 +79,7 @@ class ProductRepository:
             session: AsyncSession,
             id_product: int,
             supply_id: int,
-            status: StatusEnum_
+            status: StatusEnum_1
     ) -> ProductSchema | None:
         query = text(f"""
                 UPDATE {settings.POSTGRES_SCHEMA}.products 
